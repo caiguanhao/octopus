@@ -32,6 +32,10 @@ The `octopus` program can also be run on 64-bit system.
 
 The header file `rwl_exp.h` and library file `librwl.a` are from Octopus company.
 
+You might try to run the command as root user if you're having trouble initializing Octopus.
+
+The config file `RWL.INI` (case sensitive) should be in the same directory of `octopus`.
+
 ---
 
 LICENSE: MIT
