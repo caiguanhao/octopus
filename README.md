@@ -36,6 +36,27 @@ You might try to run the command as root user if you're having trouble initializ
 
 The config file `RWL.INI` (case sensitive) should be in the same directory of `octopus`.
 
+## Example
+
+```
+node example.js
+
+// tap card
+
+{ id: 406988,
+  result:
+   { CardID: '12345678',
+     RemainingValue: 49898,
+     AddValueDetail: '0',
+     LastAddValueDevice: '1234567',
+     Class: '4',
+     Language: '0',
+     AvailableAutopayAmount: '20',
+     UniqueManufactureID: '0101010101010101',
+     Logs: null },
+  error: null }
+```
+
 ---
 
 LICENSE: MIT
