@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"flag"
 	"log"
 	"net"
 	"strconv"
@@ -314,12 +315,15 @@ func errorForCode(code int) error {
 }
 
 func main() {
+	address := flag.String("address", "127.0.0.1:12345", "address to listen to")
+	flag.Parse()
+
 	err := rpc.Register(new(Octopus))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", ":1234")
+	tcpAddr, err := net.ResolveTCPAddr("tcp", *address)
 	if err != nil {
 		log.Fatal(err)
 	}
