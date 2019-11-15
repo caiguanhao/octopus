@@ -101,6 +101,13 @@ type (
 		ServiceInfo      Hex
 		DeferReleaseFlag int
 	}
+
+	TxnAmtArgs struct {
+		Value          int
+		RemainingValue int
+		LED            int
+		Sound          int
+	}
 )
 
 func (h Hex) MarshalJSON() ([]byte, error) {
@@ -277,6 +284,16 @@ func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	}
 	(*reply).AdditionalInfo = b[:n+len(ud)]
 	log.Println("successfully deducted value, remaining", deductRet)
+	return nil
+}
+
+func (octopus *Octopus) TxnAmt(args *TxnAmtArgs, reply *bool) error {
+	ret := int(C.TxnAmt(C.int(args.Value), C.int(args.RemainingValue), C.uchar(args.LED), C.uchar(args.Sound)))
+	if ret >= 100000 {
+		log.Println("failed to execute TxtAmt", ret)
+		return errorForCode(ret)
+	}
+	*reply = true
 	return nil
 }
 

@@ -24,6 +24,8 @@ Interact Octopus Card Reader/Writer with JSON-RPC (Golang).
 {"id": 5, "method": "Octopus.Deduct", "params": [{"Value": 1, "ServiceInfo": "0F0C62D1F7", "DeferReleaseFlag": 1}]}
 
 {"id": 6, "method": "Octopus.GenerateExchangeFile", "params": []}
+
+{"id": 7, "method": "Octopus.TxnAmt", "params": [{"Value": 0, "RemainingValue": 0, "LED": 0, "Sound": 1}]}
 ```
 
 To compile, run `make` on a 32-bit Linux system.
