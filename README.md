@@ -32,6 +32,8 @@ To compile, run `make` on a 32-bit Linux system.
 
 The `octopus` program can also be run on 64-bit system.
 
+It is recommended to build this project using [go1.8.7.linux-386.tar.gz](https://dl.google.com/go/go1.8.7.linux-386.tar.gz).
+
 The header file `rwl_exp.h` and library file `librwl.a` are from Octopus company.
 
 You might try to run the command as root user if you're having trouble initializing Octopus.
