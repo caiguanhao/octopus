@@ -79,6 +79,13 @@ type (
 		AdditionalInfo Hex
 	}
 
+	GetLastAddValueInfoResult struct {
+		Date     string
+		TypeCode string
+		Type     string
+		DeviceID string
+	}
+
 	InitArgs struct {
 		PortNumber   int
 		BaudRate     int
@@ -157,6 +164,37 @@ func (octopus *Octopus) UpdateLocationID(args *WriteLocationArgs, reply *bool) e
 	log.Println("successfully updated location", locationID)
 	*reply = true
 	return nil
+}
+
+func (octopus *Octopus) GetLastAddValueInfo(_ *int, reply *GetLastAddValueInfoResult) error {
+	data := C.malloc(C.sizeof_uchar * 512)
+	defer C.free(unsafe.Pointer(data))
+	ret := int(C.GetExtraInfo(C.uint(0), C.uint(1), (*C.uchar)(data)))
+	if ret == 0 {
+		parts := strings.SplitN(C.GoString((*C.char)(unsafe.Pointer(data))), ",", 3)
+		var typ string
+		switch parts[1] {
+		case "1":
+			typ = "Cash"
+		case "2":
+			typ = "Online"
+		case "3":
+			typ = "Refund"
+		case "4":
+			typ = "AAVS"
+		default:
+			typ = "Others"
+		}
+		*reply = GetLastAddValueInfoResult{
+			Date:     parts[0],
+			TypeCode: parts[1],
+			Type:     typ,
+			DeviceID: parts[2],
+		}
+		return nil
+	}
+	log.Println("failed to get last add value info", ret)
+	return errorForCode(ret)
 }
 
 func (octopus *Octopus) Inspect(_ *int, reply *CardReaderInfo) error {
