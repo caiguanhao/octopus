@@ -1,1 +1,5 @@
 octopus
+/rwl/ar/*
+!/rwl/ar/.*
+/rwl/upload/*
+!/rwl/upload/.*

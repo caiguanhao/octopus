@@ -30,7 +30,7 @@ function call (method, params) {
     client.on('end', done)
     client.on('error', done)
 
-    client.connect(1234, '127.0.0.1', function() {
+    client.connect(12345, '127.0.0.1', function() {
       client.write(JSON.stringify({
         id,
         method,
