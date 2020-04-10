@@ -14,7 +14,9 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"net"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +28,10 @@ import (
 
 const (
 	TransactionTimeSince int64 = 946684800 // 2000-01-01T00:00:00+00:00
+)
+
+var (
+	Version string
 )
 
 type (
@@ -383,7 +389,20 @@ func main() {
 	address := flag.String("address", "127.0.0.1:12345", "address to listen to")
 	verbosity := flag.String("verbosity", "info", "debug, info, notice, warning, error, critical")
 	color := flag.Bool("color", false, "colored output")
+	version := flag.Bool("version", false, "show version and list of JSON-RPC methods and exit")
 	flag.Parse()
+
+	if *version {
+		fmt.Println("Version:", Version)
+		fmt.Println()
+		fmt.Println("List of JSON-RPC methods:")
+		o := reflect.TypeOf(new(Octopus))
+		for i := 0; i < o.NumMethod(); i++ {
+			method := o.Method(i)
+			fmt.Println("-", method.Name)
+		}
+		return
+	}
 
 	initLogger(*verbosity, *color)
 
