@@ -389,17 +389,37 @@ func main() {
 	address := flag.String("address", "127.0.0.1:12345", "address to listen to")
 	verbosity := flag.String("verbosity", "info", "debug, info, notice, warning, error, critical")
 	color := flag.Bool("color", false, "colored output")
-	version := flag.Bool("version", false, "show version and list of JSON-RPC methods and exit")
+	v := flag.Bool("v", false, "show version and list of JSON-RPC methods and exit")
+	version := flag.Bool("version", false, "show more info than -v")
 	flag.Parse()
 
-	if *version {
+	if *v || *version {
 		fmt.Println("Version:", Version)
 		fmt.Println()
-		fmt.Println("List of JSON-RPC methods:")
+		if *version {
+			fmt.Println("List of JSON-RPC methods and default values of requests and responses:")
+		} else {
+			fmt.Println("List of JSON-RPC methods:")
+		}
 		o := reflect.TypeOf(new(Octopus))
 		for i := 0; i < o.NumMethod(); i++ {
 			method := o.Method(i)
-			fmt.Println("-", method.Name)
+			if *version {
+				first := method.Type.In(1)
+				fmt.Println()
+				if first.String() == "*int" {
+					fmt.Println("->", method.Name)
+				} else {
+					input := reflect.New(first.Elem()).Interface()
+					inputJson, _ := json.Marshal(input)
+					fmt.Println("->", method.Name, string(inputJson))
+				}
+				output := reflect.New(method.Type.In(2).Elem()).Interface()
+				outputJson, _ := json.Marshal(output)
+				fmt.Println("<-", string(outputJson))
+			} else {
+				fmt.Println("-", method.Name)
+			}
 		}
 		return
 	}
