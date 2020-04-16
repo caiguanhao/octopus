@@ -27,7 +27,7 @@ func (c *Codec) WriteResponse(r *rpc.Response, x interface{}) error {
 		b, _ := json.Marshal(x)
 		log.Debug("response", "->", r.ServiceMethod, "-", strings.TrimSpace(string(b)))
 	} else {
-		log.Error("response with error", "->", r.ServiceMethod, "-", r.Error)
+		log.Debug("response with error", "->", r.ServiceMethod, "-", r.Error)
 	}
 	return c.codec.WriteResponse(r, x)
 }

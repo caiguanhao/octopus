@@ -153,10 +153,10 @@ func (octopus *Octopus) Init(args *InitArgs, reply *CardReaderInfo) error {
 
 	initRet := int(C.InitComm(portNumber, baudRate, controllerID))
 	if initRet != 0 {
-		log.Error("InitComm", initRet)
+		log.Errorf("InitComm(%d,%d,%d),<%d>", args.PortNumber, args.BaudRate, args.ControllerID, initRet)
 		return errorForCode(initRet)
 	}
-	log.Notice("InitComm", initRet)
+	log.Noticef("InitComm(%d,%d,%d),<%d>", args.PortNumber, args.BaudRate, args.ControllerID, initRet)
 
 	return octopus.Inspect(new(int), reply)
 }
@@ -165,10 +165,10 @@ func (octopus *Octopus) UpdateLocationID(args *WriteLocationArgs, reply *bool) e
 	locationID := C.uint(args.LocationID)
 	locRet := int(C.WriteID(locationID))
 	if locRet != 0 {
-		log.Error("WriteID", locRet)
+		log.Errorf("WriteID(%d),<%d>", args.LocationID, locRet)
 		return errorForCode(locRet)
 	}
-	log.Notice("WriteID", locRet)
+	log.Noticef("WriteID(%d),<%d>", args.LocationID, locRet)
 	*reply = true
 	return nil
 }
@@ -201,10 +201,10 @@ func (octopus *Octopus) GetLastAddValueInfo(_ *int, reply *GetLastAddValueInfoRe
 			Type:     typ,
 			DeviceID: parts[2],
 		}
-		log.Notice("GetExtraInfo", ret, command, parameter, result)
+		log.Noticef("GetExtraInfo(%d,%d),<%s,%d>", command, parameter, result, ret)
 		return nil
 	}
-	log.Error("GetExtraInfo", ret)
+	log.Errorf("GetExtraInfo(%d,%d),<%d>", command, parameter, ret)
 	return errorForCode(ret)
 }
 
@@ -228,10 +228,10 @@ func (octopus *Octopus) Inspect(_ *int, reply *CardReaderInfo) error {
 			InterimBlacklistVersion:    int(info.IntBLVer),
 			FunctionalBlacklistVersion: int(info.FuncBLVer),
 		}
-		log.Notice("TimeVer", tvRet)
+		log.Noticef("TimeVer(),<%d>", tvRet)
 		return nil
 	}
-	log.Error("TimeVer", tvRet)
+	log.Errorf("TimeVer(),<%d>", tvRet)
 	return errorForCode(tvRet)
 }
 
@@ -249,17 +249,18 @@ func (octopus *Octopus) Poll(args *PollArgs, reply *Card) error {
 
 	pollRet := int(C.Poll(command, timeout, (*C.char)(data)))
 	if pollRet > 100000 {
-		log.Error("Poll", pollRet)
+		log.Errorf("Poll(%d,%d),<%d>", args.Command, args.Timeout, pollRet)
 		return errorForCode(pollRet)
 	}
 	b := C.GoBytes(data, 1024)
 	n := bytes.IndexByte(b, 0)
 	if n == -1 {
-		log.Error("Poll", "failed to get data from poll")
+		log.Errorf("Poll(%d,%d),<%s>", args.Command, args.Timeout, "failed to get data from poll")
 		return errors.New("invalid data")
 	}
 
-	parts := strings.Split(string(b[:n]), ",")
+	ret := string(b[:n])
+	parts := strings.Split(ret, ",")
 	parts1 := strings.Split(parts[1], "-")
 	card := Card{
 		CardID:                 parts[0],
@@ -294,14 +295,14 @@ func (octopus *Octopus) Poll(args *PollArgs, reply *Card) error {
 	*reply = card
 
 	octopus.lastCardID = card.CardID
-	log.Notice("Poll", card.CardID, card.Class, card.RemainingValue)
+	log.Noticef("Poll(%d,%d),<%s,%d>", args.Command, args.Timeout, ret, pollRet)
 
 	return nil
 }
 
 func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	if len(args.ServiceInfo) < 5 {
-		log.Error("Deduct", "bad deduct service info")
+		log.Errorf("Deduct(),<%s>", "service info must be 5 bytes")
 		return errors.New("service info must be 5 bytes")
 	}
 
@@ -323,7 +324,7 @@ func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 
 	deductRet := int(C.Deduct(amount, (*C.uchar)(data), deferReleaseFlag))
 	if deductRet > 100000 {
-		log.Error("Deduct", deductRet)
+		log.Errorf("Deduct(%d,%X,%d),<%d>", args.Value, args.ServiceInfo, args.DeferReleaseFlag, deductRet)
 		return errorForCode(deductRet)
 	}
 	*reply = DeductResult{
@@ -332,22 +333,23 @@ func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	b := C.GoBytes(data, 128)
 	n := bytes.Index(b, ud)
 	if n == -1 {
-		log.Error("Deduct", "failed to get result from additional info")
+		log.Errorf("Deduct(%d,%X,%d),<%s>", args.Value, args.ServiceInfo, args.DeferReleaseFlag, "failed to get result from additional info")
 		return nil
 	}
 	(*reply).AdditionalInfo = b[:n+len(ud)]
-	log.Notice("Deduct", octopus.lastCardID, args.ServiceInfo, amount, deductRet)
+	log.Noticef("Deduct(%d,%X,%d),<%s,%X,%d,%d>", args.Value, args.ServiceInfo, args.DeferReleaseFlag,
+		octopus.lastCardID, (*reply).AdditionalInfo, args.Value, deductRet)
 	return nil
 }
 
 func (octopus *Octopus) TxnAmt(args *TxnAmtArgs, reply *bool) error {
 	ret := int(C.TxnAmt(C.int(args.Value), C.int(args.RemainingValue), C.uchar(args.LED), C.uchar(args.Sound)))
 	if ret >= 100000 {
-		log.Error("TxnAmt", ret)
+		log.Errorf("TxnAmt(%d,%d,%d,%d),<%d>", args.Value, args.RemainingValue, args.LED, args.Sound, ret)
 		return errorForCode(ret)
 	}
 	*reply = true
-	log.Notice("TxnAmt", ret)
+	log.Noticef("TxnAmt(%d,%d,%d,%d),<%d>", args.Value, args.RemainingValue, args.LED, args.Sound, ret)
 	return nil
 }
 
@@ -357,14 +359,14 @@ func (octopus *Octopus) GenerateExchangeFile(_ *int, reply *XFileResult) error {
 
 	ret := int(C.XFile((*C.char)(data)))
 	if ret >= 100000 {
-		log.Error("XFile", ret)
+		log.Errorf("XFile(),<%d>", ret)
 		return errorForCode(ret)
 	}
 
 	b := C.GoBytes(data, 128)
 	n := bytes.IndexByte(b, 0)
 	if n == -1 {
-		log.Error("XFile", "failed to get data from xfile")
+		log.Errorf("XFile(),<%s>", "failed to get data from xfile")
 		return errors.New("invalid data")
 	}
 	filename := string(b[:n])
@@ -372,7 +374,7 @@ func (octopus *Octopus) GenerateExchangeFile(_ *int, reply *XFileResult) error {
 		FileName:    filename,
 		WarningCode: ret,
 	}
-	log.Notice("XFile", ret, filename)
+	log.Noticef("XFile(),<%s,%d>", filename, ret)
 	return nil
 }
 
@@ -388,6 +390,7 @@ func errorForCode(code int) error {
 func main() {
 	address := flag.String("address", "127.0.0.1:12345", "address to listen to")
 	verbosity := flag.String("verbosity", "info", "debug, info, notice, warning, error, critical")
+	showLevel := flag.Bool("show-level", false, "show level of log")
 	color := flag.Bool("color", false, "colored output")
 	v := flag.Bool("v", false, "show version and list of JSON-RPC methods and exit")
 	version := flag.Bool("version", false, "show more info than -v")
@@ -424,7 +427,7 @@ func main() {
 		return
 	}
 
-	initLogger(*verbosity, *color)
+	initLogger(*verbosity, *color, *showLevel)
 
 	err := rpc.Register(new(Octopus))
 	if err != nil {

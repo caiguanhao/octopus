@@ -8,7 +8,7 @@ import (
 
 var log = logging.MustGetLogger("octopus")
 
-func initLogger(verbosity string, color bool) {
+func initLogger(verbosity string, color bool, showLevel bool) {
 	var lvl logging.Level
 	switch verbosity {
 	case "debug":
@@ -25,11 +25,16 @@ func initLogger(verbosity string, color bool) {
 		lvl = logging.INFO
 	}
 
+	var lvlString string
+	if showLevel {
+		lvlString = "%{level: 6s} "
+	}
+
 	var format logging.Formatter
 	if color {
-		format = logging.MustStringFormatter(`%{color}%{level: 6s} %{time:02/01/2006 15:04:05}%{color:reset} %{message}`)
+		format = logging.MustStringFormatter("%{color}" + lvlString + "%{time:2006-01-02 15:04:05}%{color:reset} %{message}")
 	} else {
-		format = logging.MustStringFormatter(`%{level: 6s} %{time:02/01/2006 15:04:05} %{message}`)
+		format = logging.MustStringFormatter(lvlString + "%{time:2006-01-02 15:04:05} %{message}")
 	}
 	backend := logging.NewLogBackend(os.Stdout, "", 0)
 	formatter := logging.NewBackendFormatter(backend, format)
