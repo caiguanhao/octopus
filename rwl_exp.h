@@ -53,6 +53,7 @@ extern int Block(unsigned char, unsigned char *);
 extern int WriteID(unsigned int);
 extern int Deduct(int, unsigned char *, int);
 extern int AddValue(int, unsigned char, unsigned char *, int);
+extern int AddFund(int, unsigned char, unsigned char *); // 3083 M_Rebate
 extern int DrainAR(unsigned char *);
 extern int RetrieveUD(char *);
 extern int InitComm(unsigned char, int, unsigned long);
@@ -82,6 +83,8 @@ extern int GetSysInfo(unsigned char *bInfo); // End 362 ITRM Blacklist Enhanceme
 extern int ActionCheck(unsigned int uiCom, unsigned int uiParam, unsigned int *uiResult);
 extern int ActionUpdate(unsigned char *ucCom, unsigned char *ucRes);
 extern int GetActionResult(unsigned char *ucResult);
+extern int InitSubsidyList(void);
+extern int CollectSubsidy(unsigned int uiRefNum, unsigned char *ucResult);
 
 #ifdef _CPP_
 }
