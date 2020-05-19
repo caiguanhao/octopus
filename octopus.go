@@ -378,6 +378,17 @@ func (octopus *Octopus) GenerateExchangeFile(_ *int, reply *XFileResult) error {
 	return nil
 }
 
+func (octopus *Octopus) HouseKeeping(_ *int, reply *bool) error {
+	ret := int(C.HouseKeeping())
+	if ret >= 100000 {
+		log.Errorf("HouseKeeping(),<%d>", ret)
+		return errorForCode(ret)
+	}
+	*reply = true
+	log.Noticef("HouseKeeping(),<%d>", ret)
+	return nil
+}
+
 func parseTime(input string) time.Time {
 	secs, _ := strconv.ParseInt(input, 10, 0)
 	return time.Unix(TransactionTimeSince+secs, 0)
