@@ -9,7 +9,6 @@ package main
 import "C"
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -83,7 +82,6 @@ type (
 
 	DeductResult struct {
 		RemainingValue int
-		AdditionalInfo Hex
 	}
 
 	GetLastAddValueInfoResult struct {
@@ -301,9 +299,9 @@ func (octopus *Octopus) Poll(args *PollArgs, reply *Card) error {
 }
 
 func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
-	if len(args.ServiceInfo) < 5 {
-		log.Errorf("Deduct(),<%s>", "service info must be 5 bytes")
-		return errors.New("service info must be 5 bytes")
+	if len(args.ServiceInfo) != 7 {
+		log.Errorf("Deduct(),<%s>", "service info must be 7 bytes")
+		return errors.New("service info must be 7 bytes")
 	}
 
 	amount := C.int(args.Value)
@@ -311,9 +309,7 @@ func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	data := C.malloc(C.sizeof_uchar * 128)
 	defer C.free(unsafe.Pointer(data))
 
-	ud := make([]byte, 2)
-	rand.Read(ud)
-	ai := append(args.ServiceInfo[0:5], ud...)
+	ai := args.ServiceInfo
 	cai := C.CString(string(ai))
 	defer C.free(unsafe.Pointer(cai))
 	C.memcpy(unsafe.Pointer(data), unsafe.Pointer(cai), C.size_t(len(ai)))
@@ -330,15 +326,8 @@ func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	*reply = DeductResult{
 		RemainingValue: deductRet,
 	}
-	b := C.GoBytes(data, 128)
-	n := bytes.Index(b, ud)
-	if n == -1 {
-		log.Errorf("Deduct(%d,%X,%d),<%s>", args.Value, args.ServiceInfo, args.DeferReleaseFlag, "failed to get result from additional info")
-		return nil
-	}
-	(*reply).AdditionalInfo = b[:n+len(ud)]
-	log.Noticef("Deduct(%d,%X,%d),<%s,%X,%d,%d>", args.Value, args.ServiceInfo, args.DeferReleaseFlag,
-		octopus.lastCardID, (*reply).AdditionalInfo, args.Value, deductRet)
+	log.Noticef("Deduct(%d,%X,%d),<%s,%d,%d>", args.Value, args.ServiceInfo, args.DeferReleaseFlag,
+		octopus.lastCardID, args.Value, deductRet)
 	return nil
 }
 
