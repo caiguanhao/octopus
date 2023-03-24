@@ -140,6 +140,9 @@ func (h *Hex) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+// Initialize and set the communication port, such as port number and baud
+// rate; re-establish the connection to the R/W upon receiving error code
+// 100001 or 100005.
 func (octopus *Octopus) Init(args *InitArgs, reply *CardReaderInfo) error {
 	// 0: use default settings in init file
 	portNumber := C.uchar(args.PortNumber)
@@ -159,6 +162,8 @@ func (octopus *Octopus) Init(args *InitArgs, reply *CardReaderInfo) error {
 	return octopus.Inspect(new(int), reply)
 }
 
+// This function writes a 4 bytes long location ID on the R/W. This ID will be
+// reported in the exchange file for settlement processing.
 func (octopus *Octopus) UpdateLocationID(args *WriteLocationArgs, reply *bool) error {
 	locationID := C.uint(args.LocationID)
 	locRet := int(C.WriteID(locationID))
@@ -171,6 +176,19 @@ func (octopus *Octopus) UpdateLocationID(args *WriteLocationArgs, reply *bool) e
 	return nil
 }
 
+// This function instructs the library to get extra information on card,
+// including Last Add Value Information and alert message defined in an alert
+// message file. The extra information will be returned in the format of byte
+// array.
+//
+// Extra information is available only after a successful Poll(). The
+// information may be updated if a transaction is attempted on card. Therefore,
+// caller shall get the most up-to-date information by calling this function
+// again after AddValue() or Deduct() is called. Generally, SPs need to get the
+// most current last add value information (i.e. last add value type, date and
+// device ID) and alert message is to be displayed or printed on receipt. So,
+// this function should be called right before displaying or printing receipt
+// to get the correct card information.
 func (octopus *Octopus) GetLastAddValueInfo(_ *int, reply *GetLastAddValueInfoResult) error {
 	data := C.malloc(C.sizeof_uchar * 512)
 	defer C.free(unsafe.Pointer(data))
@@ -206,6 +224,9 @@ func (octopus *Octopus) GetLastAddValueInfo(_ *int, reply *GetLastAddValueInfoRe
 	return errorForCode(ret)
 }
 
+// Retrieve device information and various components versions from R/W, such
+// as Device ID, Device Time, EOD version, blacklist version, firmware version,
+// Location ID, etc.
 func (octopus *Octopus) Inspect(_ *int, reply *CardReaderInfo) error {
 	data := C.malloc(C.sizeof_uchar * 2046)
 	defer C.free(unsafe.Pointer(data))
@@ -233,6 +254,8 @@ func (octopus *Octopus) Inspect(_ *int, reply *CardReaderInfo) error {
 	return errorForCode(tvRet)
 }
 
+// Detect the presence of an Octopus card/product and return relevant
+// information if found.
 func (octopus *Octopus) Poll(args *PollArgs, reply *Card) error {
 	data := C.malloc(C.sizeof_char * 1024)
 	defer C.free(unsafe.Pointer(data))
@@ -298,6 +321,10 @@ func (octopus *Octopus) Poll(args *PollArgs, reply *Card) error {
 	return nil
 }
 
+// This function instructs the R/W to perform a deduction transaction on the
+// Customer's Octopus card/product. A prior successful Poll() on the current
+// card is assumed. Incomplete transaction will be handled in this call by the
+// firmware.
 func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	if len(args.ServiceInfo) != 7 {
 		log.Errorf("Deduct(),<%s>", "service info must be 7 bytes")
@@ -331,6 +358,12 @@ func (octopus *Octopus) Deduct(args *DeductArgs, reply *DeductResult) error {
 	return nil
 }
 
+// This function is used to set LED and sound via the serial communication for
+// both R/W with LED or LCD display and R/W with buzzer module.
+// For R/W with LED or LCD display, it can set the numeric values on the display.
+// For R/W with LED display, the LED contains 2 rows:
+//   - The upper row is used to show the transaction amount (V), either deduct or add value.
+//   - The lower row is used to show the remaining value (RV).
 func (octopus *Octopus) TxnAmt(args *TxnAmtArgs, reply *bool) error {
 	ret := int(C.TxnAmt(C.int(args.Value), C.int(args.RemainingValue), C.uchar(args.LED), C.uchar(args.Sound)))
 	if ret >= 100000 {
@@ -342,6 +375,7 @@ func (octopus *Octopus) TxnAmt(args *TxnAmtArgs, reply *bool) error {
 	return nil
 }
 
+// This function generates the device exchange file.
 func (octopus *Octopus) GenerateExchangeFile(_ *int, reply *XFileResult) error {
 	data := C.malloc(C.sizeof_char * 128)
 	defer C.free(unsafe.Pointer(data))
@@ -367,6 +401,17 @@ func (octopus *Octopus) GenerateExchangeFile(_ *int, reply *XFileResult) error {
 	return nil
 }
 
+// This function provides a batch like interface for performing daily tasks. It
+// actually performs the following functions:
+//   - SendBlacklist, if any
+//   - Send EOD, if any
+//   - Send CCHS message, if any
+//   - Firmwareupgrade,if any
+// HouseKeeping() can be called by the library automatically. This is
+// controlled by the entry [MAIN]/INITHOUSE in the INI file.
+//   INITHOUSE = 1: The library to call HouseKeeping() after InitComm()
+//   INITHOUSE = 2: The library to call HouseKeeping() after XFile()
+//   INITHOUSE = 3: HouseKeeping() to be called both after InitComm() and XFile()
 func (octopus *Octopus) HouseKeeping(_ *int, reply *bool) error {
 	ret := int(C.HouseKeeping())
 	if ret >= 100000 {
