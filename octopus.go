@@ -147,10 +147,10 @@ func (octopus *Octopus) Init(args *InitArgs, reply *CardReaderInfo) error {
 	// 0: use default settings in init file
 	portNumber := C.uchar(args.PortNumber)
 
-	baudRate := C.int(args.BaudRate)
+	baudRate := C.uint(args.BaudRate)
 
 	// 0: use default settings in init file
-	controllerID := C.ulong(args.ControllerID)
+	controllerID := C.uint(args.ControllerID)
 
 	initRet := int(C.InitComm(portNumber, baudRate, controllerID))
 	if initRet != 0 {

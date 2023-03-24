@@ -43,9 +43,9 @@ typedef struct {
 	unsigned char	ChineseMsgUTF8[AMF_MESSAGE_LEN*2];
 } stAlertMsgEntry;
 
-//stDevVer 	theVER; //Mantis #7967: [Linux RWL] Blacklist not loaded
+//stDevVer 	theVER; //Mantis #7967: [Linux RWL] Blacklist not loaded 
 
-#ifdef _CPP_
+#ifdef _CPP_					
 extern "C" {
 #endif
 
@@ -56,10 +56,11 @@ extern int AddValue(int, unsigned char, unsigned char *, int);
 extern int AddFund(int, unsigned char, unsigned char *); // 3083 M_Rebate
 extern int DrainAR(unsigned char *);
 extern int RetrieveUD(char *);
-extern int InitComm(unsigned char, int, unsigned long);
+extern int InitComm(unsigned char, unsigned int, unsigned int); // Project 3101 Android Library, Mantis 10510 - item 7
 extern int SendCCHS(char *);
 extern int Poll(unsigned char, unsigned char, char *);
 extern int PollEx(unsigned char, unsigned char, char *); //Mantis #7772
+extern int PollExCarPark(unsigned char, unsigned char, char *, unsigned int, int, unsigned char, char *);
 extern int PortClose();
 extern int Reset();
 extern int SendBlack(char *);
@@ -70,7 +71,7 @@ extern int SendEOD(char *);
 extern int FirmUpg(char *);
 extern int TxnAmt(int, int, unsigned char, unsigned char);
 extern int XFile(char *);
-extern int TimeVer(unsigned char *);
+extern int TimeVer(unsigned char *); 
 extern int HouseKeeping();
 extern int ReadLoyal(unsigned char *);
 extern int WriteLoyal(unsigned char*,int);
@@ -91,3 +92,5 @@ extern int CollectSubsidy(unsigned int uiRefNum, unsigned char *ucResult);
 #endif
 
 #endif // RWL_EXP_H
+
+
