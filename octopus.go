@@ -35,6 +35,7 @@ var (
 
 type (
 	Octopus struct {
+		inited     bool
 		lastCardID string
 	}
 
@@ -154,9 +155,11 @@ func (octopus *Octopus) Init(args *InitArgs, reply *CardReaderInfo) error {
 
 	initRet := int(C.InitComm(portNumber, baudRate, controllerID))
 	if initRet != 0 {
+		octopus.inited = false
 		log.Errorf("InitComm(%d,%d,%d),<%d>", args.PortNumber, args.BaudRate, args.ControllerID, initRet)
 		return errorForCode(initRet)
 	}
+	octopus.inited = true
 	log.Noticef("InitComm(%d,%d,%d),<%d>", args.PortNumber, args.BaudRate, args.ControllerID, initRet)
 
 	return octopus.Inspect(new(int), reply)
@@ -257,6 +260,10 @@ func (octopus *Octopus) Inspect(_ *int, reply *CardReaderInfo) error {
 // Detect the presence of an Octopus card/product and return relevant
 // information if found.
 func (octopus *Octopus) Poll(args *PollArgs, reply *Card) error {
+	if !octopus.inited {
+		return errorForCode(100001)
+	}
+
 	data := C.malloc(C.sizeof_char * 1024)
 	defer C.free(unsafe.Pointer(data))
 
