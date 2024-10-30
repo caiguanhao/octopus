@@ -115,6 +115,53 @@ node example.js
   error: null }
 ```
 
+## Note on running OSDX on Linux
+
+You can run OSDX in a Docker container.
+
+Download OSDX Linux Client from Octopus first.
+
+You need to extract `OSDX 2.4.1.0 (for Linux).tar.gz` (for example) and
+put your cert file (.pfx) and this Dockerfile in a directory:
+
+```
+FROM openjdk:8-jdk
+
+WORKDIR /app
+
+COPY . .
+
+RUN echo "ConfigVer=2\n\
+KSType=pkcs12\n\
+KSFile=/app/SP12345-abc_mop20240102.pfx\n\
+KSPW=PASSWORD\n\
+TSType=JCEKS\n\
+TSFile=/app/update/keystore.jks\n\
+LogDir=/octopus/logs/\n\
+Account=SP12345-abc_mop\n\
+SP12345-abc_mop.UploadDir=/octopus/upload\n\
+SP12345-abc_mop.OldUploadDir=/octopus/old_upload\n\
+SP12345-abc_mop.DownloadDir=/octopus/download\n\
+SP12345-abc_mop.OldDownloadDir=/octopus/old_download\n\
+SP12345-abc_mop.LogDir=/octopus/logs" > config.ini
+
+CMD ["java", "-jar", "main.jar"]
+```
+
+Replace `SP12345-abc_mop`, `SP12345-abc_mop20240102.pfx`, `PASSWORD` to your cert name and password.
+
+Run `docker build -t osdx .` in that directory.
+
+When you want to sync files, put MPS.* files in /root/octopus/upload (for example),
+mount /root/octopus to /octopus in container. Run this command will start sync:
+
+```
+docker run --rm -v /root/octopus/:/octopus osdx
+```
+
+When finished, remember to copy files in /root/octopus/download
+to ./rwl/download (for example) to update octopus.
+
 ---
 
 LICENSE: MIT
